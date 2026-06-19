@@ -1,5 +1,7 @@
 import json
+import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
@@ -22,8 +24,10 @@ def heartbeat():
 
         id_pc = datos["id_pc"]
         status = datos.get("status", "Online")
-        # Registramos la hora local del servidor al recibir la señal
-        ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Forzar que la hora registrada sea la de México (GMT-6)
+        zona_mx = ZoneInfo("America/Mexico_City")
+        ahora = datetime.now(zona_mx).strftime("%Y-%m-%d %H:%M:%S")
 
         # Guardamos o actualizamos la info de la PC
         computadoras[id_pc] = {"status": status, "ultima_conexion": ahora}
@@ -48,13 +52,11 @@ def mostrar_estados():
 
 @app.route("/ver_estados", methods=["GET"])
 def ver_estados_json():
-    # Ruta por si necesitas consumir los datos puros desde otra aplicación
+    # Ruta por si necesitas consumir los datos puros en formato JSON desde otra app
     return jsonify(computadoras)
 
 
 if __name__ == "__main__":
     # Render asigna el puerto mediante una variable de entorno, por eso usamos el puerto 5000 por defecto
-    import os
-
     puerto = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=puerto)
